@@ -1,11 +1,10 @@
 # Student Depression Prediction and Exploratory Data Analysis (EDA)
 
 **Course:** Introduction to Data Science, 2nd Year 1st Term — De La Salle Lipa  
-**Contributors:** Irish May Pureza, Julia Lois Mendoza, Kent  
 
 ---
 
-## 📌 Project Overview
+## Project Overview
 
 This repository contains the complete, cleaned, and properly formatted exploratory data analysis (EDA) and predictive modeling pipeline for the **Student Depression Dataset** (27,901 student records across 18 features).
 
@@ -21,7 +20,7 @@ The workflow investigates demographic, academic, financial, and behavioral facto
 
 ---
 
-## 📊 Exploratory Data Analysis (EDA) Highlights
+## Exploratory Data Analysis (EDA) Highlights
 
 ### 1. Univariate Analysis
 - **Target Imbalance:** ~58.55% of students in the dataset report experiencing depression (`1`), while ~41.45% do not (`0`).
@@ -48,7 +47,7 @@ The workflow investigates demographic, academic, financial, and behavioral facto
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 student-depression/
@@ -72,7 +71,7 @@ student-depression/
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### Option A: Running the Standalone Python Script
 Using standard `pip`:
@@ -91,21 +90,3 @@ Open `student_depression_analysis.ipynb` in:
 - **VS Code** (built-in Jupyter extension)
 - **JupyterLab / Notebook**: `jupyter notebook student_depression_analysis.ipynb`
 - **Google Colab**: Upload the `.ipynb` and `Student Depression Dataset.csv.xlsx` to your Google Drive / Colab session runtime.
-
----
-
-## 👥 Team Work Breakdown
-
-- **Irish May Pureza:**
-  - One-hot encoding of nominal variables: `Gender`, `City`, `Profession` (`drop_first=True`).
-  - Handling and ordinal mapping of `Sleep Duration` (`Less than 5 hours`: 0, `5-6 hours`: 1, `7-8 hours`: 2, `More than 8 hours`: 3, `'Others'` $\rightarrow$ `'5-6 hours'`).
-- **Julia Lois Mendoza:**
-  - Data cleaning and ordinal mapping for `Dietary Habits` (`Unhealthy`: 0, `Moderate`: 1, `Healthy`: 2, `'Others'` $\rightarrow$ `'Healthy'`).
-  - Label encoding for `Degree`.
-  - Binary mapping (`No`: 0, `Yes`: 1) for `Have you ever had suicidal thoughts ?` and `Family History of Mental Illness`.
-- **Kent:**
-  - Data ingestion, integrity & duplicate checking.
-  - Univariate & bivariate visualization suite.
-  - Pearson numerical correlation and Cramér's V categorical association analyses.
-  - Train/Validation split (`80/20`, `random_state=84`), `StandardScaler`, and `LogisticRegression` baseline.
-  - Validation metrics dashboard and Confusion Matrix reporting.
