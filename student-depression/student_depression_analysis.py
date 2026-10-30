@@ -588,8 +588,8 @@ def train_and_evaluate(
     plt.close()
     print(f"[INFO] Saved confusion matrix to {output_dir}/09_confusion_matrix.png")
 
-    # Generate Visual Table Graphic for Evaluation & Error Breakdown
-    plot_evaluation_and_outcomes_table(
+    # Generate Visual Table Graphics for Evaluation & Error Breakdown
+    plot_evaluation_tables(
         y_val=y_val,
         val_preds=val_preds,
         output_dir=output_dir,
@@ -608,13 +608,13 @@ def train_and_evaluate(
     }
 
 
-def plot_evaluation_and_outcomes_table(
+def plot_evaluation_tables(
     y_val: pd.Series, val_preds: np.ndarray, output_dir: str = "figures"
 ):
     """
-    Generate and save a publication-ready visual table graphic showing:
-    1. Model Performance & Baseline Comparison
-    2. Classification Outcomes Breakdown (Error Analysis)
+    Generate and save publication-ready visual table graphics:
+    1. 15_model_performance_table.png: Model Performance & Baseline Comparison
+    2. 16_classification_outcomes_table.png: Classification Outcomes Breakdown (Error Analysis)
     """
     os.makedirs(output_dir, exist_ok=True)
     val_acc = accuracy_score(y_val, val_preds)
@@ -629,16 +629,17 @@ def plot_evaluation_and_outcomes_table(
     tn, fp, fn, tp = cm.ravel()
     total = len(y_val)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=300)
-    fig.patch.set_facecolor("white")
-
-    # Panel 1: Evaluation Metrics & Baseline Comparison
+    # ---------------------------------------------
+    # Figure 1: Model Performance & Baseline Comparison Table
+    # ---------------------------------------------
+    fig1, ax1 = plt.subplots(figsize=(11, 4.0), dpi=300)
+    fig1.patch.set_facecolor("white")
     ax1.axis("off")
     ax1.set_title(
         "Model Performance & Baseline Comparison",
-        fontsize=12,
+        fontsize=13,
         fontweight="bold",
-        pad=15,
+        pad=16,
     )
 
     metrics_data = [
@@ -655,12 +656,12 @@ def plot_evaluation_and_outcomes_table(
         [
             "Precision",
             f"{val_precision:.4f} ({val_precision * 100:.2f}%)",
-            f"Reliability of positive flags ({tp:,} / {tp + fp:,})",
+            f"Reliability of positive depression flags ({tp:,} / {tp + fp:,})",
         ],
         [
             "Sensitivity (Recall)",
             f"{val_recall:.4f} ({val_recall * 100:.2f}%)",
-            f"True depressed detected ({tp:,} / {tp + fn:,})",
+            f"True depressed students detected ({tp:,} / {tp + fn:,})",
         ],
         [
             "F1-Score",
@@ -668,16 +669,18 @@ def plot_evaluation_and_outcomes_table(
             "Harmonic balance of precision and recall",
         ],
     ]
-    col_labels1 = ["Metric", "Score", "Definition / Clinical Note"]
+    col_labels1 = ["Metric", "Score", "Definition / Clinical Interpretation"]
+    col_widths1 = [0.24, 0.22, 0.54]
 
     table1 = ax1.table(
         cellText=metrics_data,
         colLabels=col_labels1,
+        colWidths=col_widths1,
         loc="center",
         cellLoc="left",
     )
     table1.auto_set_font_size(False)
-    table1.set_fontsize(9.5)
+    table1.set_fontsize(10)
     table1.scale(1.0, 2.2)
 
     for (row, col), cell in table1.get_celld().items():
@@ -685,20 +688,32 @@ def plot_evaluation_and_outcomes_table(
         cell.set_linewidth(1.0)
         if row == 0:
             cell.set_facecolor("#f0f0f0")
-            cell.set_text_props(weight="bold")
+            cell.set_text_props(weight="bold", ha="center")
         elif row == 1:
             cell.set_facecolor("#fafafa")
-            cell.set_text_props(color="#555555")
+            cell.set_text_props(color="#444444")
         else:
             cell.set_facecolor("white")
+        if col == 1:
+            cell.set_text_props(ha="center")
 
-    # Panel 2: Classification Outcomes Breakdown (Error Analysis)
+    plt.tight_layout()
+    output_file1 = os.path.join(output_dir, "15_model_performance_table.png")
+    plt.savefig(output_file1, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"[INFO] Saved model performance table to {output_file1}")
+
+    # ---------------------------------------------
+    # Figure 2: Classification Outcomes Breakdown (Error Analysis) Table
+    # ---------------------------------------------
+    fig2, ax2 = plt.subplots(figsize=(11, 4.2), dpi=300)
+    fig2.patch.set_facecolor("white")
     ax2.axis("off")
     ax2.set_title(
         "Classification Outcomes Breakdown (Error Analysis)",
-        fontsize=12,
+        fontsize=13,
         fontweight="bold",
-        pad=15,
+        pad=16,
     )
 
     outcomes_data = [
@@ -737,7 +752,7 @@ def plot_evaluation_and_outcomes_table(
         [
             "Total Validation",
             "Held-out Sample",
-            "Combined",
+            "Combined Classes",
             f"{total:,}",
             "100.00%",
             f"{val_acc * 100:.2f}% Overall Acc.",
@@ -745,21 +760,23 @@ def plot_evaluation_and_outcomes_table(
     ]
     col_labels2 = [
         "Outcome Category",
-        "Predicted",
-        "Actual",
+        "Predicted Label",
+        "Actual Label",
         "Count",
         "Percentage",
-        "Clinical Note",
+        "Clinical Significance",
     ]
+    col_widths2 = [0.24, 0.16, 0.16, 0.12, 0.12, 0.20]
 
     table2 = ax2.table(
         cellText=outcomes_data,
         colLabels=col_labels2,
+        colWidths=col_widths2,
         loc="center",
         cellLoc="center",
     )
     table2.auto_set_font_size(False)
-    table2.set_fontsize(9.0)
+    table2.set_fontsize(9.5)
     table2.scale(1.0, 2.0)
 
     for (row, col), cell in table2.get_celld().items():
@@ -779,12 +796,10 @@ def plot_evaluation_and_outcomes_table(
             cell.set_facecolor("white")
 
     plt.tight_layout()
-    output_file = os.path.join(
-        output_dir, "15_evaluation_metrics_and_outcomes_table.png"
-    )
-    plt.savefig(output_file, dpi=300, bbox_inches="tight")
+    output_file2 = os.path.join(output_dir, "16_classification_outcomes_table.png")
+    plt.savefig(output_file2, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"[INFO] Saved evaluation and outcomes table to {output_file}")
+    print(f"[INFO] Saved classification outcomes table to {output_file2}")
 
 
 # ==========================================

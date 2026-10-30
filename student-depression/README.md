@@ -82,7 +82,8 @@ student-depression/
     ├── 12_decision_threshold.png
     ├── 13_sigmoid_curve.png
     ├── 14_l2_regularization.png
-    └── 15_evaluation_metrics_and_outcomes_table.png
+    ├── 15_model_performance_table.png
+    └── 16_classification_outcomes_table.png
 ```
 
 ---
