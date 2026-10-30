@@ -11,12 +11,22 @@ This repository contains the complete, cleaned, and properly formatted explorato
 The workflow investigates demographic, academic, financial, and behavioral factors associated with student depression and trains a **Logistic Regression** classifier.
 
 ### Local Validation Performance
-| Metric | Value | Percentage |
-| :--- | :---: | :---: |
-| **Accuracy** | `0.8556` | **85.56%** |
-| **Precision** | `0.8612` | **86.12%** |
-| **Sensitivity (Recall)** | `0.8933` | **89.33%** |
-| **F1-Score** | `0.8770` | **—** |
+| Metric | Value | Percentage | Benchmark Note |
+| :--- | :---: | :---: | :--- |
+| **Majority Baseline** | `0.5762` | **57.62%** | Naive majority class (1) guessing |
+| **Model Accuracy** | `0.8556` | **85.56%** | **+27.94% absolute lift** over baseline |
+| **Precision** | `0.8612` | **86.12%** | Reliability of positive depression flags |
+| **Sensitivity (Recall)** | `0.8933` | **89.33%** | True positive cases detected (2,873 / 3,216) |
+| **F1-Score** | `0.8770` | **—** | Robust harmonic mean across classes |
+
+### Classification Outcomes Breakdown (Error Analysis)
+| Outcome Category | Predicted Label | Actual Label | Count | Percentage | Operational Significance |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **True Positives (TP)** | Depressed (1) | Depressed (1) | **2,873** | 51.48% | Vulnerable students correctly flagged |
+| **True Negatives (TN)** | Not Depressed (0) | Not Depressed (0) | **1,902** | 34.08% | Non-depressed students correctly cleared |
+| **False Positives (FP)** | Depressed (1) | Not Depressed (0) | **463** | 8.30% | False alarms requiring counseling review |
+| **False Negatives (FN)** | Not Depressed (0) | Depressed (1) | **343** | 6.15% | Missed at-risk cases |
+| **Total Validation** | — | — | **5,581** | 100.00% | 85.56% overall accuracy |
 
 ---
 
@@ -66,7 +76,13 @@ student-depression/
     ├── 06_numerical_correlation_heatmap.png
     ├── 07_categorical_cramers_v_heatmap.png
     ├── 08_all_features_depression_correlation.png
-    └── 09_confusion_matrix.png
+    ├── 09_confusion_matrix.png
+    ├── 10_logistic_regression_advantages.png
+    ├── 11_logistic_regression_pipeline.png
+    ├── 12_decision_threshold.png
+    ├── 13_sigmoid_curve.png
+    ├── 14_l2_regularization.png
+    └── 15_evaluation_metrics_and_outcomes_table.png
 ```
 
 ---

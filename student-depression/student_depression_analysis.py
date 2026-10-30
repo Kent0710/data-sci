@@ -46,6 +46,9 @@ plt.rcParams.update(
 )
 
 
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_FIGURES_DIR = str(BASE_DIR / "figures")
+
 # ==========================================
 # 1. DATA INGESTION & INSPECTION
 # ==========================================
@@ -543,17 +546,32 @@ def train_and_evaluate(
     val_recall = recall_score(y_val, val_preds)
     val_f1 = f1_score(y_val, val_preds)
 
-    print("\n" + "=" * 40)
-    print("===== LOCAL VALIDATION DASHBOARD =====")
-    print("=" * 40)
-    print(f"Accuracy            : {val_acc:.4f} ({val_acc * 100:.2f}%)")
-    print(f"Precision           : {val_precision:.4f} ({val_precision * 100:.2f}%)")
-    print(f"Sensitivity (Recall): {val_recall:.4f} ({val_recall * 100:.2f}%)")
-    print(f"F1-Score            : {val_f1:.4f}")
-    print("=" * 40)
+    # Baseline comparison (Majority class classifier)
+    majority_count = y_val.value_counts().max()
+    val_baseline_acc = majority_count / len(y_val)
+
+    # Classification outcomes for error analysis
+    cm = confusion_matrix(y_val, val_preds)
+    tn, fp, fn, tp = cm.ravel()
+    total_val = len(y_val)
+
+    print("\n" + "=" * 55)
+    print("===== LOCAL VALIDATION & BASELINE DASHBOARD =====")
+    print("=" * 55)
+    print(f"Majority Baseline Acc: {val_baseline_acc:.4f} ({val_baseline_acc * 100:.2f}%)")
+    print(f"Model Accuracy       : {val_acc:.4f} ({val_acc * 100:.2f}%) [+{((val_acc - val_baseline_acc) * 100):.2f}% vs baseline]")
+    print(f"Precision            : {val_precision:.4f} ({val_precision * 100:.2f}%)")
+    print(f"Sensitivity (Recall) : {val_recall:.4f} ({val_recall * 100:.2f}%)")
+    print(f"F1-Score             : {val_f1:.4f}")
+    print("-" * 55)
+    print("===== CLASSIFICATION OUTCOMES (ERROR ANALYSIS) =====")
+    print(f"True Positives  (TP) : {tp:,} ({tp / total_val * 100:.2f}%) - Correctly Flagged")
+    print(f"True Negatives  (TN) : {tn:,} ({tn / total_val * 100:.2f}%) - Correctly Cleared")
+    print(f"False Positives (FP) : {fp:,} ({fp / total_val * 100:.2f}%) - False Alarm Error")
+    print(f"False Negatives (FN) : {fn:,} ({fn / total_val * 100:.2f}%) - Missed Case Error")
+    print("=" * 55)
 
     # Confusion Matrix Visualization
-    cm = confusion_matrix(y_val, val_preds)
     fig, ax = plt.subplots(figsize=(6, 5))
     disp = ConfusionMatrixDisplay(
         confusion_matrix=cm,
@@ -570,12 +588,203 @@ def train_and_evaluate(
     plt.close()
     print(f"[INFO] Saved confusion matrix to {output_dir}/09_confusion_matrix.png")
 
+    # Generate Visual Table Graphic for Evaluation & Error Breakdown
+    plot_evaluation_and_outcomes_table(
+        y_val=y_val,
+        val_preds=val_preds,
+        output_dir=output_dir,
+    )
+
     return model, {
+        "baseline_accuracy": val_baseline_acc,
         "accuracy": val_acc,
         "precision": val_precision,
         "recall": val_recall,
         "f1": val_f1,
+        "tp": tp,
+        "tn": tn,
+        "fp": fp,
+        "fn": fn,
     }
+
+
+def plot_evaluation_and_outcomes_table(
+    y_val: pd.Series, val_preds: np.ndarray, output_dir: str = "figures"
+):
+    """
+    Generate and save a publication-ready visual table graphic showing:
+    1. Model Performance & Baseline Comparison
+    2. Classification Outcomes Breakdown (Error Analysis)
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    val_acc = accuracy_score(y_val, val_preds)
+    val_precision = precision_score(y_val, val_preds)
+    val_recall = recall_score(y_val, val_preds)
+    val_f1 = f1_score(y_val, val_preds)
+
+    majority_count = y_val.value_counts().max()
+    val_baseline_acc = majority_count / len(y_val)
+
+    cm = confusion_matrix(y_val, val_preds)
+    tn, fp, fn, tp = cm.ravel()
+    total = len(y_val)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=300)
+    fig.patch.set_facecolor("white")
+
+    # Panel 1: Evaluation Metrics & Baseline Comparison
+    ax1.axis("off")
+    ax1.set_title(
+        "Model Performance & Baseline Comparison",
+        fontsize=12,
+        fontweight="bold",
+        pad=15,
+    )
+
+    metrics_data = [
+        [
+            "Majority Baseline",
+            f"{val_baseline_acc:.4f} ({val_baseline_acc * 100:.2f}%)",
+            "Benchmark guessing majority class (1)",
+        ],
+        [
+            "Accuracy",
+            f"{val_acc:.4f} ({val_acc * 100:.2f}%)",
+            f"Overall correct predictions ({tp + tn:,} / {total:,})",
+        ],
+        [
+            "Precision",
+            f"{val_precision:.4f} ({val_precision * 100:.2f}%)",
+            f"Reliability of positive flags ({tp:,} / {tp + fp:,})",
+        ],
+        [
+            "Sensitivity (Recall)",
+            f"{val_recall:.4f} ({val_recall * 100:.2f}%)",
+            f"True depressed detected ({tp:,} / {tp + fn:,})",
+        ],
+        [
+            "F1-Score",
+            f"{val_f1:.4f}",
+            "Harmonic balance of precision and recall",
+        ],
+    ]
+    col_labels1 = ["Metric", "Score", "Definition / Clinical Note"]
+
+    table1 = ax1.table(
+        cellText=metrics_data,
+        colLabels=col_labels1,
+        loc="center",
+        cellLoc="left",
+    )
+    table1.auto_set_font_size(False)
+    table1.set_fontsize(9.5)
+    table1.scale(1.0, 2.2)
+
+    for (row, col), cell in table1.get_celld().items():
+        cell.set_edgecolor("black")
+        cell.set_linewidth(1.0)
+        if row == 0:
+            cell.set_facecolor("#f0f0f0")
+            cell.set_text_props(weight="bold")
+        elif row == 1:
+            cell.set_facecolor("#fafafa")
+            cell.set_text_props(color="#555555")
+        else:
+            cell.set_facecolor("white")
+
+    # Panel 2: Classification Outcomes Breakdown (Error Analysis)
+    ax2.axis("off")
+    ax2.set_title(
+        "Classification Outcomes Breakdown (Error Analysis)",
+        fontsize=12,
+        fontweight="bold",
+        pad=15,
+    )
+
+    outcomes_data = [
+        [
+            "True Positives (TP)",
+            "Depressed (1)",
+            "Depressed (1)",
+            f"{tp:,}",
+            f"{tp / total * 100:.2f}%",
+            "Correctly Flagged",
+        ],
+        [
+            "True Negatives (TN)",
+            "Not Depressed (0)",
+            "Not Depressed (0)",
+            f"{tn:,}",
+            f"{tn / total * 100:.2f}%",
+            "Correctly Cleared",
+        ],
+        [
+            "False Positives (FP)",
+            "Depressed (1)",
+            "Not Depressed (0)",
+            f"{fp:,}",
+            f"{fp / total * 100:.2f}%",
+            "False Alarm Error",
+        ],
+        [
+            "False Negatives (FN)",
+            "Not Depressed (0)",
+            "Depressed (1)",
+            f"{fn:,}",
+            f"{fn / total * 100:.2f}%",
+            "Missed Case Error",
+        ],
+        [
+            "Total Validation",
+            "Held-out Sample",
+            "Combined",
+            f"{total:,}",
+            "100.00%",
+            f"{val_acc * 100:.2f}% Overall Acc.",
+        ],
+    ]
+    col_labels2 = [
+        "Outcome Category",
+        "Predicted",
+        "Actual",
+        "Count",
+        "Percentage",
+        "Clinical Note",
+    ]
+
+    table2 = ax2.table(
+        cellText=outcomes_data,
+        colLabels=col_labels2,
+        loc="center",
+        cellLoc="center",
+    )
+    table2.auto_set_font_size(False)
+    table2.set_fontsize(9.0)
+    table2.scale(1.0, 2.0)
+
+    for (row, col), cell in table2.get_celld().items():
+        cell.set_edgecolor("black")
+        cell.set_linewidth(1.0)
+        if row == 0:
+            cell.set_facecolor("#f0f0f0")
+            cell.set_text_props(weight="bold")
+        elif row == 3:  # FP
+            cell.set_facecolor("#fff5f5")
+        elif row == 4:  # FN
+            cell.set_facecolor("#fff0f0")
+        elif row == 5:  # Total
+            cell.set_facecolor("#f0f0f0")
+            cell.set_text_props(weight="bold")
+        else:
+            cell.set_facecolor("white")
+
+    plt.tight_layout()
+    output_file = os.path.join(
+        output_dir, "15_evaluation_metrics_and_outcomes_table.png"
+    )
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"[INFO] Saved evaluation and outcomes table to {output_file}")
 
 
 # ==========================================
@@ -587,22 +796,22 @@ def main():
     summarize_dataset(df)
 
     # 2. Univariate EDA
-    perform_univariate_eda(df, output_dir="figures")
+    perform_univariate_eda(df, output_dir=DEFAULT_FIGURES_DIR)
 
     # 3. Bivariate EDA
-    perform_bivariate_eda(df, output_dir="figures")
+    perform_bivariate_eda(df, output_dir=DEFAULT_FIGURES_DIR)
 
     # 4. Preprocessing
     X, y = preprocess_dataset(df)
 
     # 5. Correlation Analysis (Numerical & Categorical)
-    perform_correlation_analysis(df, X, y, output_dir="figures")
+    perform_correlation_analysis(df, X, y, output_dir=DEFAULT_FIGURES_DIR)
 
     # 6. Model Training & Evaluation
-    train_and_evaluate(X, y, output_dir="figures")
+    train_and_evaluate(X, y, output_dir=DEFAULT_FIGURES_DIR)
 
     print("\n[SUCCESS] Entire data science pipeline executed successfully!")
-    print("[INFO] All figures saved to the './figures' directory.")
+    print(f"[INFO] All figures saved to: {DEFAULT_FIGURES_DIR}")
 
 
 if __name__ == "__main__":
